@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#060913">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Nexus of Knowledge - أطلس الفكر والمعرفة</title>
+  
+  <!-- ربط ملف البيان للتطبيق PWA -->
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    :root {
+      --bg-main: #060913;
+      --bg-card: rgba(15, 23, 42, 0.95);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* الشريط العلوي */
+    header {
+      padding: 12px 20px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 30;
+      gap: 15px;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      min-width: 180px;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .brand .sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* حقل البحث الذكي */
+    .search-box {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 9px 18px 9px 40px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 30px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent-cyan);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    /* شارة المطور وبيانات التواصل */
+    .dev-badge {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .dev-badge b {
+      color: var(--accent-cyan);
+    }
+
+    .dev-badge a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-weight: 700;
+      direction: ltr;
+      display: inline-block;
+    }
+
+    /* منطقة الرسم التفاعلي */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    /* شريط الأقسام السريعة */
+    .pills-bar {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      left: 15px;
+      display: flex;
+      gap: 8px;
+      z-index: 15;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+    }
+
+    .pills-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pill {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 25px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+
+    .pill:hover, .pill.active {
+      background: var(--accent-cyan);
+      color: var(--bg-main);
+      font-weight: 700;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+    }
+
+    /* أزرار التحكم الجانبية */
+    .floating-actions {
+      position: absolute;
+      bottom: 25px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .fab-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .fab-btn:hover {
+      background: var(--accent-cyan);
+      color: var(--bg-main);
+      transform: scale(1.08);
+    }
+
+    .bottom-hint {
+      position: absolute;
+      bottom: 18px;
+      right: 50%;
+      transform: translateX(50%);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    /* نافذة استعراض الفائدة والمعرفة (Modal) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(4, 7, 15, 0.75);
+      backdrop-filter: blur(10px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 620px;
+      max-height: 88vh;
+      background: #0b1329;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+      position: relative;
+      animation: popModal 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @keyframes popModal {
+      from { transform: scale(0.92) translateY(15px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #cbd5e1;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--accent-rose);
+      color: #fff;
+    }
+
+    .modal-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-cyan);
+      padding: 4px 14px;
+      border-radius: 30px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .modal-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .modal-summary {
+      font-size: 0.92rem;
+      color: #cbd5e1;
+      line-height: 1.65;
+      background: rgba(30, 41, 59, 0.4);
+      padding: 14px 16px;
+      border-radius: 12px;
+      border-right: 4px solid var(--accent-cyan);
+    }
+
+    .benefits-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .benefits-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .benefit-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 16px;
+      border-radius: 12px;
+      transition: transform 0.2s;
+    }
+
+    .benefit-card:hover {
+      transform: translateX(-4px);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .benefit-card h4 {
+      font-size: 0.88rem;
+      color: var(--accent-cyan);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .benefit-card p {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+
+    .quote-container {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%);
+      border-radius: 14px;
+      padding: 14px 18px;
+      border-left: 3px solid var(--accent-cyan);
+      font-style: italic;
+      font-size: 0.84rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    .modal-actions-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .action-btn {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--accent-cyan);
+      color: var(--bg-main);
+    }
+
+    /* التنبيهات المنبثقة (Toast) */
+    .toast {
+      position: fixed;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0f172a;
+      border: 1px solid var(--accent-cyan);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 200;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 10px 14px;
+      }
+      .brand {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .dev-badge {
+        justify-content: center;
+        font-size: 0.7rem;
+      }
+      .modal-box {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- رأس الصفحة والبحث -->
+  <header>
+    <div class="brand">
+      <h1>أطلس الفكر والمعرفة</h1>
+      <div class="sub">Nexus of Knowledge - الإصدار التفاعلي المتكامل</div>
+    </div>
+    
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="ابحث عن مفهوم علمي، عادة، ذكاء اصطناعي، أو حكمة..." autocomplete="off">
+      <span class="search-icon">🔍</span>
+    </div>
+
+    <div class="dev-badge">
+      <span>تصميم وتطوير: <b>رائد الياسري</b></span>
+      <span>•</span>
+      <span>هاتف: <a href="tel:735881072">735881072</a></span>
+    </div>
+  </header>
+
+  <!-- مساحة الرسم والعقد -->
+  <div id="canvas-wrap">
+    <div class="pills-bar" id="pillsBar">
+      <span class="pill active" onclick="filterCategory('all')">🌐 كل العلوم</span>
+      <span class="pill" onclick="filterCategory('تقنية')">🤖 الذكاء والبرمجة</span>
+      <span class="pill" onclick="filterCategory('تطوير')">⚡ العادات والإنتاجية</span>
+      <span class="pill" onclick="filterCategory('دماغ')">🧠 علم النفس والدماغ</span>
+      <span class="pill" onclick="filterCategory('فلسفة')">🏛️ الحكمة والفلسفة</span>
+      <span class="pill" onclick="filterCategory('كون')">🌌 الفيزياء والكون</span>
+      <span class="pill" onclick="filterCategory('مال')">📈 استراتيجيات المال</span>
+    </div>
+
+    <canvas id="mainCanvas"></canvas>
+
+    <div class="floating-actions">
+      <button class="fab-btn" onclick="resetCanvasPosition()" title="إعادة ضبط الرؤية">🎯</button>
+      <button class="fab-btn" onclick="toggleAudioFeedback()" id="audioBtn" title="كتم/تفعيل المؤثرات">🔊</button>
+      <button class="fab-btn" onclick="showRandomNode()" title="فائدة عشوائية">🎲</button>
+    </div>
+
+    <div class="bottom-hint">💡 اسحب العقد بيدك لتشكيل الأفكار، أو اضغط على أي علم لاكتشاف أسراره</div>
+  </div>
+
+  <!-- النافذة التفصيلية للموضوع -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-box">
+      <div class="modal-header-row">
+        <div>
+          <span class="modal-tag" id="mTag">التصنيف</span>
+          <h2 class="modal-title" id="mTitle">عنوان العلم</h2>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-summary" id="mSummary">الملخص المعرفي المركز...</div>
+      
+      <div class="benefits-title">✨ الجواهر التطبيقية والقوانين:</div>
+      <div class="benefits-list" id="mBenefits"></div>
+
+      <div class="quote-container" id="mQuote">"الحكمة بداية كل إنجاز عظيم."</div>
+
+      <div class="modal-actions-bar">
+        <button class="action-btn" onclick="copyKnowledgeQuote()">📋 نسخ المقولة</button>
+        <button class="action-btn" onclick="speakSummary()">🗣️ استماع صوتي</button>
+        <button class="action-btn" onclick="closeModal()">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">تم نسخ المقولة بنجاح!</div>
+
+  <script>
+    // ==========================================
+    // 1. قاعدة البيانات المعرفية الضخمة (12 مجالاً تفصيلياً)
+    // ==========================================
+    var knowledgeBase = [
+      {
+        id: 0,
+        title: 'الذكاء الاصطناعي وهندسة الأوامر',
+        category: 'تقنية',
+        tag: 'الثورة التكنولوجية',
+        color: '#38bdf8',
+        x: 0.50, y: 0.42, vx: 0.25, vy: -0.20, r: 34,
+        summary: 'كيف تسخر نماذج التفكير الآلي والحوسبة الذكية لمضاعفة إنتاجك وسرعتك الذهنية أضعافاً مضاعفة دون استنزاف.',
+        benefits: [
+          { title: 'هندسة الأوامر الفعالة', desc: 'التعامل مع الذكاء الاصطناعي كموظف خبير: حدد له الدور، السياق، والشروط الدقيقة لتحصل على نتائج خارقة.' },
+          { title: 'أتمتة البرمجة وبناء الحلول', desc: 'استخدام المساعدات البرمجية الذكية لإنهاء مشاريع تقنية متكاملة وتصحيح الخوارزميات خلال دقائق معدودة.' },
+          { title: 'بناء الذاكرة الاصطناعية الممتدة', desc: 'ربط بياناتك وملاحظاتك الشخصية بنماذج ذكية لتحليل كتبك وأعمالك وتوليد أفكار جديدة منها.' }
+        ],
+        quote: 'الذكاء الاصطناعي لن يستبدل المفكرين، بل سيعطي المفكر أجنحة ليحلق بأسرع مما تخيل البشرية.'
+      },
+      {
+        id: 1,
+        title: 'النجاح وبناء العادات الذرية',
+        category: 'تطوير',
+        tag: 'هندسة السلوك',
+        color: '#10b981',
+        x: 0.28, y: 0.30, vx: -0.20, vy: 0.22, r: 30,
+        summary: 'قوانين التأثير التراكمي: كيف تصنع مستقبلك الاستثنائي عبر خطوات بسيطة لا يلحظها أحد يومياً ولكنها تغير حياتك جذرياً.',
+        benefits: [
+          { title: 'مضاعفة الـ 1% التراكمية', desc: 'التحسن الطفيف اليومي بنسبة 1% فقط يجعلك متفوقاً بـ 37 ضعفاً عند نهاية العام الواحد.' },
+          { title: 'ربط العادة بالهوية', desc: 'لا تركز على هدف الانتهاء من كتاب، بل ركز على بناء هوية أنك قارئ وباحث دائم الاطلاع.' },
+          { title: 'هندسة البيئة لا قوة الإرادة', desc: 'الإرادة تضعف بنهاية اليوم؛ صمم بيئة غرفتك ومكتبك بحيث يكون الفعل الصحيح هو الأسهل والمشتت هو الأصعب.' }
+        ],
+        quote: 'أنت لا ترتقي إلى مستوى أهدافك، بل تهبط إلى مستوى أنظمتك وعاداتك اليومية.'
+      },
+      {
+        id: 2,
+        title: 'كيمياء الدماغ وهرمون الإنجاز',
+        category: 'دماغ',
+        tag: 'علم الأعصاب',
+        color: '#ec4899',
+        x: 0.72, y: 0.32, vx: 0.22, vy: 0.24, r: 29,
+        summary: 'أسرار الدوبامين والتركيز العميق: كيف تتحكم بمحرك طاقتك وشغفك لتنتصر على المماطلة وتستمتع بالمهام الصعبة.',
+        benefits: [
+          { title: 'صيام الدوبامين الصباحي', desc: 'تأخير تفقد الهاتف ومنصات التواصل أول 60 دقيقة من يومك يحمي نظام المكافأة العصبي ويمنحك صفاءً ذهنياً نادراً.' },
+          { title: 'جلسات العمل فائق التركيز (Ultradian)', desc: 'الدماغ البشري مصمم ليعمل في قمة تركيزه لمدة 90 دقيقة يعقبها استرخاء تام لمدة 20 دقيقة لشحن الطاقة.' },
+          { title: 'إعادة تدوير الإجهاد', desc: 'النظر إلى الأفق البعيد والمشي اليومي يهدئ شبكة التفكير الافتراضي (DMN) وينشط الإبداع العصبي التلقائي.' }
+        ],
+        quote: 'من يتحكم في نظام مكافأته العصبية، يتحكم في مصيره وطاقته بالكامل.'
+      },
+      {
+        id: 3,
+        title: 'الحكمة الرواقية والصلابة النفسية',
+        category: 'فلسفة',
+        tag: 'الفكر والوعي',
+        color: '#a855f7',
+        x: 0.36, y: 0.68, vx: 0.22, vy: -0.28, r: 28,
+        summary: 'فن السيادة على المشاعر وتطهير العقل من القلق غير المجدي، وتحويل كل عقبة إلى فرصة ارتقاء وقوة داخلية.',
+        benefits: [
+          { title: 'ثنائية التحكم الصارمة', desc: 'قسّم أحداث يومك إلى قسمين: ما بيدك (أفكارك وأفعالك)، وما ليس بيدك (آراء الناس والظروف) ولا تحزن على الثاني أبداً.' },
+          { title: 'التحويل المعرفي للعقبة', desc: 'كل صعوبة تواجهها في عملك أو دراستك هي ميدان التدريب الحقيقي لصقل صبرك ومهارتك الاستثنائية.' },
+          { title: 'الهدوء في عين العاصفة', desc: 'المشاعر السلبية لا تأتي من الأحداث ذاتها، بل من حكم عقلك وتفسيرك المتسرع لها.' }
+        ],
+        quote: 'لا تدع الأحداث الخارجية تجرك إلى قاعها؛ راحة بالك قلعة تبنيها بوعيك الداخلي.'
+      },
+      {
+        id: 4,
+        title: 'الفيزياء الكونية وقوانين الطاقة',
+        category: 'كون',
+        tag: 'أسرار الكون',
+        color: '#f59e0b',
+        x: 0.68, y: 0.64, vx: -0.26, vy: -0.22, r: 28,
+        summary: 'من نسيج الزمكان إلى جسيمات الكم الدقيقة: كيف تترابط قوانين الطاقة، الحركة، والإنتروبيا في نظام بديع ومبهر.',
+        benefits: [
+          { title: 'مبدأ الإنتروبيا والتنظيم المستمر', desc: 'الأشياء في الطبيعة تميل تلقائياً للفوضى ما لم تبذل طاقة منتظمة لترتيبها؛ وهذا ينطبق على أفكارك، كودك، ومشاريعك.' },
+          { title: 'تأثير الفراشة والأنظمة المعقدة', desc: 'تغيير بسيط ومنتظم في نقطة ارتكاز قوية يحدث تحولات هائلة وغير متوقعة على المدى الطويل.' },
+          { title: 'قانون بقاء الطاقة والمجهود', desc: 'لا توجد ساعات عمل وسهر ضائعة، فالجهد الذهني يتحول بالضرورة إلى خلايا عصبية متطورة وخبرة لا تزول.' }
+        ],
+        quote: 'الكون لا يمنح أسراره لمن يتعجل، بل لمن يتأمل بنظام وشغف دائمين.'
+      },
+      {
+        id: 5,
+        title: 'هندسة التفكير والنماذج العقلية',
+        category: 'فلسفة',
+        tag: 'صناعة القرار',
+        color: '#06b6d4',
+        x: 0.18, y: 0.52, vx: 0.20, vy: 0.18, r: 27,
+        summary: 'أدوات العباقرة في التفكير: كيف تفكك أعقد المشاكل إلى أجزائها الأولى وتتخذ قرارات استراتيجية لا تندم عليها.',
+        benefits: [
+          { title: 'التفكير من المبادئ الأولى', desc: 'لا تقلد حلول الآخرين بالقياس؛ فكك المشكلة إلى حقائقها الأساسية التي لا تقبل الشك ثم ابنِ حلك من الصفر.' },
+          { title: 'التفكير من الدرجة الثانية', desc: 'لا تسأل فقط: ما هي النتيجة المباشرة لقراري؟ بل اسأل: وما الذي سيترتب على تلك النتيجة بعد 6 أشهر وبعد عام؟' },
+          { title: 'شفرة أوكام للوضوح', desc: 'الحل الأبسط والأقل تعقيداً غالباً ما يكون هو الأصح؛ تجنب تعقيد الأكواد والخطط دون حاجة ملحة.' }
+        ],
+        quote: 'إذا كان التفكير شاقاً، فهذا دليل على أنك تبني مسارات عصبية جديدة كلياً.'
+      },
+      {
+        id: 6,
+        title: 'سيكولوجية المال وإدارة المخاطر',
+        category: 'مال',
+        tag: 'الثروة الذكية',
+        color: '#84cc16',
+        x: 0.82, y: 0.50, vx: -0.22, vy: 0.19, r: 28,
+        summary: 'قواعد الثروة المستدامة، نفسية التداول والاستثمار، وكيف تدير المخاطر بحسابات رياضية هادئة تتفوق على الطمع والخوف.',
+        benefits: [
+          { title: 'معادلة النجاة قبل الربح', desc: 'في الأسواق وفي المشاريع، الهدف الأول هو الاستمرار وعدم الإفلاس؛ الأرباح الضخمة تأتي تلقائياً مع البقاء والانضباط.' },
+          { title: 'فصل العاطفة عن الأرقام', desc: 'تحديد وقف الخسارة وخطة الخروج قبل الدخول في أي صفقة أو مشروع يلغي التوتر ويمنحك عقلية المحترفين.' },
+          { title: 'قوة العائد المركب المالي', desc: 'الثروات الحقيقية لا تُبنى في ليلة، بل هي نتاج تراكم أرباح معقولة يعاد استثمارها بصبر على مدى سنوات.' }
+        ],
+        quote: 'إدارة المخاطر ليست خوفاً، بل هي الدرع الذي يحمي مجهودك من تقلبات الأيام.'
+      },
+      {
+        id: 7,
+        title: 'البرمجة وهندسة النظم النظيفة',
+        category: 'تقنية',
+        tag: 'الحوسبة المتقدمة',
+        color: '#6366f1',
+        x: 0.44, y: 0.20, vx: 0.23, vy: 0.20, r: 27,
+        summary: 'معايير الكود الراقي والنظم القابلة للتوسع: كيف تبني تطبيقات تعيش وتخدم ملايين المستخدمين بدون أخطاء.',
+        benefits: [
+          { title: 'مبدأ المسؤولية الفردية (SRP)', desc: 'اجعل كل دالة وكل ملف يؤدي غرضاً واحداً فقط بإتقان شديد؛ هذا يجعل كودك أسهل في الصيانة والتطوير.' },
+          { title: 'بنية المشروعات المتماسكة', desc: 'تنظيم المجلدات وفصل واجهة المستخدم عن قواعد البيانات يمنع الفوضى البرمجية مع نمو التطبيق.' },
+          { title: 'التحسين الممنهج دون تسرع', desc: 'اجعل الكود يعمل بشكل صحيح أولاً، ثم اجعله جميلاً ونظيفاً، ثم حسّن سرعته عند الحاجة الحقيقية فقط.' }
+        ],
+        quote: 'أي أحمق يستطيع كتابة كود يفهمه الحاسوب، المبرمج المبدع يكتب كوداً يفهمه البشر بسهولة.'
+      },
+      {
+        id: 8,
+        title: 'البلاغة وفن الإقناع والتأثير',
+        category: 'فلسفة',
+        tag: 'الذكاء اللغوي',
+        color: '#e11d48',
+        x: 0.32, y: 0.82, vx: -0.18, vy: -0.22, r: 26,
+        summary: 'سحر الكلمة وقوة السرد: كيف تحول أفكارك المعقدة ومشاريعك التقنية إلى رسائل تأسر القلوب وتلهم المستمعين.',
+        benefits: [
+          { title: 'مثلث الإقناع الأرسطي', desc: 'لكي تؤثر في أي مستمع، امزج بين المنطق القوي (Logos)، والمصداقية الأخلاقية (Ethos)، واللمسة الإنسانية (Pathos).' },
+          { title: 'قوة القصة في ترسيخ الفكرة', desc: 'الأدمغة لا تتذكر الأرقام المجردة؛ غلف رسالتك التقنية أو الحياتية بقصة قصيرة تشعل شغف المقابل.' },
+          { title: 'الإيجاز البليغ', desc: 'احذف كل كلمة لا تخدم جوهر المعنى؛ قوة الفكرة تتضاعف كلما قلت الكلمات وتكثفت المعاني.' }
+        ],
+        quote: 'البيان سحر العقول؛ من أوتي حكمة اللسان ملك مفاتيح القلوب والتأثير.'
+      },
+      {
+        id: 9,
+        title: 'الصلابة البدنية والطاقة الحيوية',
+        category: 'دماغ',
+        tag: 'الصحة والنشاط',
+        color: '#14b8a6',
+        x: 0.76, y: 0.78, vx: 0.21, vy: -0.22, r: 26,
+        summary: 'الأساس البيولوجي للنجاح الذهني: كيف تبني جسداً قوياً يمد عقلك بطاقة متقدة طوال ساعات التفكير والإبداع.',
+        benefits: [
+          { title: 'النوم العميق وترميم الدماغ', desc: 'أثناء النوم في الظلام التام، ينشط نظام التنظيف الليمفاوي لغسل سموم الإجهاد وتثبيت المعلومات الجديدة.' },
+          { title: 'تمرين المقاومة والتنفس العميق', desc: 'تحفيز العضلات يفرز بروتينات (BDNF) التي تجدد خلايا الدماغ وتحمي من التشتت والاكتئاب.' },
+          { title: 'شرب الماء والترطيب الخلوي', desc: 'انخفاض نسبة السوائل في الجسم بنسبة 2% فقط يقلل التركيز والقدرة الحسابية بنسبة تتجاوز 20%.' }
+        ],
+        quote: 'العقل السليم يحتاج محركاً جسدياً قوياً يحمله في رحلة الطموح الشاقة.'
+      },
+      {
+        id: 10,
+        title: 'الحوسبة السحابية وشبكات الويب',
+        category: 'تقنية',
+        tag: 'البنية الرقمية',
+        color: '#3b82f6',
+        x: 0.58, y: 0.22, vx: -0.20, vy: 0.24, r: 26,
+        summary: 'الأساس المتين للإنترنت الحديث: كيف تنتقل البيانات وتستضاف المواقع العالمية بأعلى معايير الأمان والتوافر.',
+        benefits: [
+          { title: 'مفهوم المعمارية الموزعة', desc: 'توزيع معالجة البيانات على سيرفرات متعددة يضمن عدم توقف تطبيقك عند زيادة الضغط والزوار.' },
+          { title: 'الأمان والتشفير الشامل (HTTPS)', desc: 'حماية خصوصية المستخدمين عبر تشفير الاتصال يمثل حجر الزاوية لأي نظام برمجي موثوق.' },
+          { title: 'تطبيقات الويب التقدمية (PWA)', desc: 'دمج أفضل ما في مواقع الويب مع سرعة وقوة تطبيقات الهاتف دون الحاجة لتنزيلات معقدة.' }
+        ],
+        quote: 'الإنترنت هو أعظم مكتبة ونسيج اتصالي بناه الإنسان؛ تعلم كيف تبني فيه وتترك أثرك.'
+      },
+      {
+        id: 11,
+        title: 'إدارة الوقت والتركيز العميق',
+        category: 'تطوير',
+        tag: 'الكفاءة والإنتاج',
+        color: '#fbbf24',
+        x: 0.50, y: 0.85, vx: 0.19, vy: -0.21, r: 27,
+        summary: 'فن حماية الانتباه في عصر الفوضى الرقمية: كيف تنجز في 4 ساعات صافية ما يعجز عنه الآخرون في أسابيع.',
+        benefits: [
+          { title: 'قانون باركنسون في المواعيد', desc: 'العمل يمتد ليملاً الوقت المتاح له؛ حدد مواعيد تسليم قصيرة جداً وستتفاجأ بسرعة ودقة إنجازك.' },
+          { title: 'عزل المشتتات والبيئة المغلقة', desc: 'كل تنبيه هاتفي يقطع عملك يتطلب من عقلك 23 دقيقة ليستعيد كامل تركيزه السابق.' },
+          { title: 'قائمة المهام الثلاث الكبرى', desc: 'حدد في بداية كل يوم أهم 3 مهام مفصلية فقط، ولا تبدأ بأي شيء آخر حتى تنهيها بالكامل.' }
+        ],
+        quote: 'ليس المهم أن تكون مشغولاً طوال اليوم، بل المهم بماذا أنت مشغول وما الذي أنجزته حقاً.'
+      }
+    ];
+
+    // روابط وشبكات الطاقة بين العلوم
+    var links = [
+      { from: 0, to: 7 },
+      { from: 0, to: 10 },
+      { from: 0, to: 5 },
+      { from: 1, to: 2 },
+      { from: 1, to: 11 },
+      { from: 2, to: 9 },
+      { from: 3, to: 5 },
+      { from: 3, to: 8 },
+      { from: 4, to: 0 },
+      { from: 4, to: 5 },
+      { from: 6, to: 1 },
+      { from: 6, to: 5 },
+      { from: 7, to: 10 },
+      { from: 8, to: 3 },
+      { from: 11, to: 1 }
+    ];
+
+    // ==========================================
+    // 2. إعدادات لوحة الرسم التفاعلية والتحريك
+    // ==========================================
+    var canvas = document.getElementById('mainCanvas');
+    var ctx = canvas.getContext('2d');
+    var width = 0, height = 0;
+    var currentFilter = 'all';
+
+    function resizeCanvas() {
+      var wrap = document.getElementById('canvas-wrap');
+      width = canvas.width = wrap.clientWidth;
+      height = canvas.height = wrap.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // توزيع العقد وفق مساحة الشاشة
+    for (var i = 0; i < knowledgeBase.length; i++) {
+      knowledgeBase[i].cx = width * knowledgeBase[i].x;
+      knowledgeBase[i].cy = height * knowledgeBase[i].y;
+    }
+
+    // نجوم الخلفية الثابتة والنابضة
+    var stars = [];
+    for (var s = 0; s < 70; s++) {
+      stars.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        size: Math.random() * 1.6 + 0.4,
+        alpha: Math.random() * 0.7 + 0.2,
+        speed: Math.random() * 0.02 + 0.005
+      });
+    }
+
+    var draggedNode = null;
+    var pointerStartX = 0, pointerStartY = 0;
+    var audioFeedbackEnabled = true;
+
+    // ==========================================
+    // 3. نظام الصوت التفاعلي (Web Audio API)
+    // ==========================================
+    var audioCtx = null;
+    function playBeep(freq, type, duration) {
+      if (!audioFeedbackEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq || 440, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (duration || 0.15));
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + (duration || 0.15));
+      } catch (e) {}
+    }
+
+    function toggleAudioFeedback() {
+      audioFeedbackEnabled = !audioFeedbackEnabled;
+      document.getElementById('audioBtn').innerText = audioFeedbackEnabled ? '🔊' : '🔇';
+      showToast(audioFeedbackEnabled ? 'تم تشغيل الأصوات التفاعلية' : 'تم كتم الأصوات');
+    }
+
+    // ==========================================
+    // 4. حلقة الرسم والفيزياء الحركية (Animation Loop)
+    // ==========================================
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // رسم النجوم الكونية
+      for (var s = 0; s < stars.length; s++) {
+        var st = stars[s];
+        st.alpha += Math.sin(Date.now() * st.speed) * 0.005;
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + Math.max(0.1, Math.min(0.8, st.alpha)) + ')';
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // رسم روابط الطاقة بين العقد
+      for (var l = 0; l < links.length; l++) {
+        var na = knowledgeBase[links[l].from];
+        var nb = knowledgeBase[links[l].to];
+
+        if (currentFilter !== 'all' && na.category !== currentFilter && nb.category !== currentFilter) {
+          continue;
+        }
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(na.cx, na.cy);
+        ctx.lineTo(nb.cx, nb.cy);
+        ctx.stroke();
+
+        // نبضة طاقة متحركة على الخط
+        var t = (Date.now() * 0.0008 + l * 0.2) % 1;
+        var px = na.cx + (nb.cx - na.cx) * t;
+        var py = na.cy + (nb.cy - na.cy) * t;
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // رسم وتحريك العقد العلمية
+      for (var i = 0; i < knowledgeBase.length; i++) {
+        var node = knowledgeBase[i];
+
+        // فيزياء الحركة الارتدادية
+        if (node !== draggedNode) {
+          node.cx += node.vx;
+          node.cy += node.vy;
+
+          if (node.cx < node.r + 20 || node.cx > width - node.r - 20) node.vx *= -1;
+          if (node.cy < node.r + 20 || node.cy > height - node.r - 20) node.vy *= -1;
+        }
+
+        var isMatch = (currentFilter === 'all' || node.category === currentFilter);
+        var baseAlpha = isMatch ? 1 : 0.2;
+
+        // وهج العقدة الخارجي
+        var grad = ctx.createRadialGradient(node.cx, node.cy, node.r * 0.2, node.cx, node.cy, node.r * 2.2);
+        grad.addColorStop(0, node.color);
+        grad.addColorStop(1, 'transparent');
+        ctx.globalAlpha = baseAlpha;
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(node.cx, node.cy, node.r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // جسم الدائرة الداخلي
+        ctx.fillStyle = '#0b1120';
+        ctx.beginPath();
+        ctx.arc(node.cx, node.cy, node.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // الإطار المضيء
+        ctx.strokeStyle = node.color;
+        ctx.lineWidth = (node === draggedNode) ? 4.5 : 2.8;
+        ctx.stroke();
+
+        // عنوان العقدة
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(node.title, node.cx, node.cy + node.r + 18);
+
+        ctx.globalAlpha = 1.0;
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ==========================================
+    // 5. التفاعل بالماوس وباللمس للهواتف (Touch/Click)
+    // ==========================================
+    function getNodeAt(x, y) {
+      for (var i = 0; i < knowledgeBase.length; i++) {
+        var n = knowledgeBase[i];
+        var dist = Math.hypot(n.cx - x, n.cy - y);
+        if (dist <= n.r + 16) return n;
+      }
+      return null;
+    }
+
+    // دعم الماوس على الكمبيوتر
+    canvas.addEventListener('mousedown', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      pointerStartX = mx;
+      pointerStartY = my;
+      draggedNode = getNodeAt(mx, my);
+      if (draggedNode) playBeep(520, 'sine', 0.08);
+    });
+
+    window.addEventListener('mousemove', function(e) {
+      if (draggedNode) {
+        var rect = canvas.getBoundingClientRect();
+        draggedNode.cx = e.clientX - rect.left;
+        draggedNode.cy = e.clientY - rect.top;
+      }
+    });
+
+    window.addEventListener('mouseup', function(e) {
+      if (draggedNode) {
+        var rect = canvas.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+        var my = e.clientY - rect.top;
+        if (Math.hypot(pointerStartX - mx, pointerStartY - my) < 6) {
+          openModal(draggedNode);
+        }
+        draggedNode = null;
+      }
+    });
+
+    // دعم شاشات اللمس على هواتف الأندرويد
+    canvas.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        var rect = canvas.getBoundingClientRect();
+        var tx = e.touches[0].clientX - rect.left;
+        var ty = e.touches[0].clientY - rect.top;
+        pointerStartX = tx;
+        pointerStartY = ty;
+        draggedNode = getNodeAt(tx, ty);
+        if (draggedNode) playBeep(520, 'sine', 0.08);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', function(e) {
+      if (draggedNode && e.touches.length === 1) {
+        var rect = canvas.getBoundingClientRect();
+        draggedNode.cx = e.touches[0].clientX - rect.left;
+        draggedNode.cy = e.touches[0].clientY - rect.top;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', function(e) {
+      if (draggedNode) {
+        if (e.changedTouches.length === 1) {
+          var rect = canvas.getBoundingClientRect();
+          var ex = e.changedTouches[0].clientX - rect.left;
+          var ey = e.changedTouches[0].clientY - rect.top;
+          if (Math.hypot(pointerStartX - ex, pointerStartY - ey) < 10) {
+            openModal(draggedNode);
+          }
+        }
+        draggedNode = null;
+      }
+    });
+
+    // ==========================================
+    // 6. التحكم بالنافذة المنبثقة والفوائد (Modal)
+    // ==========================================
+    var currentOpenedNode = null;
+
+    function openModal(node) {
+      currentOpenedNode = node;
+      playBeep(640, 'triangle', 0.18);
+
+      document.getElementById('mTag').innerText = node.tag;
+      document.getElementById('mTitle').innerText = node.title;
+      document.getElementById('mSummary').innerText = node.summary;
+
+      var bList = document.getElementById('mBenefits');
+      bList.innerHTML = '';
+      for (var i = 0; i < node.benefits.length; i++) {
+        var b = node.benefits[i];
+        bList.innerHTML += '<div class="benefit-card"><h4>✓ ' + b.title + '</h4><p>' + b.desc + '</p></div>';
+      }
+
+      document.getElementById('mQuote').innerText = '«' + node.quote + '»';
+      document.getElementById('modalOverlay').style.display = 'flex';
+    }
+
+    function closeModal() {
+      playBeep(380, 'sine', 0.1);
+      document.getElementById('modalOverlay').style.display = 'none';
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'modalOverlay') closeModal();
+    }
+
+    // ==========================================
+    // 7. ميزات إضافية (نسخ، صوت، تصفية، وبحث)
+    // ==========================================
+    function copyKnowledgeQuote() {
+      if (!currentOpenedNode) return;
+      var text = currentOpenedNode.title + '\n' + currentOpenedNode.quote;
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('تم نسخ المقولة إلى الحافظة بنجاح!');
+      });
+    }
+
+    function speakSummary() {
+      if (!('speechSynthesis' in window) || !currentOpenedNode) {
+        showToast('ميزة القراءة غير مدعومة في متصفحك');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance(currentOpenedNode.title + '. ' + currentOpenedNode.summary);
+      utter.lang = 'ar-SA';
+      utter.rate = 0.95;
+      window.speechSynthesis.speak(utter);
+      showToast('جاري تشغيل الملخص صوتياً...');
+    }
+
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 2600);
+    }
+
+    function filterCategory(cat) {
+      currentFilter = cat;
+      playBeep(480, 'sine', 0.08);
+
+      var pills = document.querySelectorAll('.pill');
+      pills.forEach(function(p) { p.classList.remove('active'); });
+
+      if (event && event.target) {
+        event.target.classList.add('active');
+      }
+    }
+
+    function resetCanvasPosition() {
+      playBeep(440, 'triangle', 0.12);
+      for (var i = 0; i < knowledgeBase.length; i++) {
+        knowledgeBase[i].cx = width * knowledgeBase[i].x;
+        knowledgeBase[i].cy = height * knowledgeBase[i].y;
+      }
+      showToast('تمت إعادة ضبط موضع العقد في المنتصف');
+    }
+
+    function showRandomNode() {
+      var rand = knowledgeBase[Math.floor(Math.random() * knowledgeBase.length)];
+      openModal(rand);
+    }
+
+    // البحث اللحظي والتفاعلي
+    var searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        var query = searchInput.value.trim().toLowerCase();
+        if (!query) return;
+
+        var matched = null;
+        for (var i = 0; i < knowledgeBase.length; i++) {
+          var k = knowledgeBase[i];
+          if (k.title.toLowerCase().indexOf(query) !== -1 || k.summary.toLowerCase().indexOf(query) !== -1) {
+            matched = k;
+            break;
+          }
+        }
+
+        if (matched) {
+          openModal(matched);
+        } else {
+          var dynamicNode = {
+            title: 'تحليل معرفي حر: ' + query,
+            tag: 'بحث واستكشاف',
+            summary: 'استكشاف الأبعاد الفكرية لموضوع (' + query + ') وكيف يرتبط بمستقبل المعرفة وتطوير المهارات القيادية.',
+            benefits: [
+              { title: 'الربط بالذكاء الاصطناعي', desc: 'يمكن تسخير خوارزميات الذكاء الاصطناعي لتحليل هذا العلم وبناء حلول ذكية لخدمة المجتمع.' },
+              { title: 'التطبيق العملي والتراكمي', desc: 'تحويل المفاهيم النظرية إلى مشاريع واقعية صغيرة يضمن استيعابها وصناعة فارق ملموس.' }
+            ],
+            quote: 'المعرفة الحقيقية هي التي تتحول إلى أثر نافع في حياة الناس وتطوير أدواتهم.'
+          };
+          openModal(dynamicNode);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
